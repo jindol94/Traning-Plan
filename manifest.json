@@ -2,6 +2,7 @@
   "name": "춘천 Sub-3:10 트래커",
   "short_name": "춘천 3:10",
   "display": "standalone",
+  "start_url": ".",
   "background_color": "#23483a",
   "theme_color": "#23483a",
   "icons": [
