@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>춘천 Sub-3:10 트래커</title>
+<style>
+:root {
+  --ink: #16211c;
+  --ink-soft: #4d5c54;
+  --ink-mute: #8a968f;
+  --paper: #f3f5f0;
+  --card: #ffffff;
+  --line: #e0e5dd;
+  --road: #23483a;      /* deep pine — Chuncheon lakeside */
+  --road-soft: #e3ece6;
+  --bib: #e8542f;       /* race bib orange */
+  --bib-soft: #fdeae3;
+  --gold: #d9a441;
+  --radius: 14px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ink: #e8ece9; --ink-soft: #a7b3ab; --ink-mute: #6d7a72;
+    --paper: #121815; --card: #1b2420; --line: #2a352f;
+    --road: #7fc4a4; --road-soft: #21332b;
+    --bib: #ff7a4f; --bib-soft: #3a251d;
+  }
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+html { font-size: 16px; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", "Noto Sans KR", sans-serif;
+  background: var(--paper); color: var(--ink);
+  min-height: 100vh; padding-bottom: 90px;
+}
+.wrap { max-width: 480px; margin: 0 auto; padding: 0 16px; }
+
+/* ---- header ---- */
+header { padding: 20px 0 6px; }
+.eyebrow { font-size: 12px; letter-spacing: 0.14em; color: var(--bib); font-weight: 700; }
+h1 { font-size: 22px; font-weight: 800; letter-spacing: -0.02em; margin-top: 2px; }
+.dday { font-variant-numeric: tabular-nums; color: var(--ink-soft); font-size: 13px; margin-top: 2px; }
+
+/* ---- overall progress ---- */
+.overall {
+  background: var(--road); border-radius: var(--radius);
+  padding: 16px; margin: 14px 0 18px; color: #fff;
+  position: relative; overflow: hidden;
+}
+@media (prefers-color-scheme: dark) { .overall { color: var(--paper); background: var(--road-soft); } }
+.overall .label { font-size: 12px; opacity: 0.75; }
+.overall .nums { display:flex; align-items: baseline; gap: 8px; margin-top: 4px; }
+.overall .pct { font-size: 34px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing:-0.02em; }
+.overall .cnt { font-size: 13px; opacity: 0.8; font-variant-numeric: tabular-nums; }
+.track { height: 8px; background: rgba(255,255,255,0.22); border-radius: 4px; margin-top: 12px; overflow:hidden; }
+@media (prefers-color-scheme: dark) { .track { background: rgba(0,0,0,0.3); } }
+.track .fill { height:100%; background: var(--bib); border-radius: 4px; transition: width 0.4s cubic-bezier(.2,.8,.2,1); }
+.kmline { display:flex; justify-content: space-between; font-size: 11px; opacity: 0.7; margin-top: 6px; font-variant-numeric: tabular-nums; }
+
+/* ---- week selector ---- */
+.weekbar {
+  display: flex; gap: 8px; overflow-x: auto; padding: 4px 2px 12px;
+  scrollbar-width: none; -webkit-overflow-scrolling: touch;
+}
+.weekbar::-webkit-scrollbar { display: none; }
+.wk {
+  flex: 0 0 auto; min-width: 52px; padding: 8px 6px 7px;
+  border-radius: 12px; border: 1.5px solid var(--line); background: var(--card);
+  text-align: center; cursor: pointer; user-select: none;
+  transition: transform 0.1s;
+}
+.wk:active { transform: scale(0.95); }
+.wk .n { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.wk .p { font-size: 10px; color: var(--ink-mute); margin-top: 1px; }
+.wk .dots { display:flex; gap:2px; justify-content:center; margin-top: 4px; height: 4px; }
+.wk .dots i { width: 4px; height: 4px; border-radius: 50%; background: var(--line); }
+.wk .dots i.on { background: var(--bib); }
+.wk.sel { border-color: var(--road); background: var(--road); }
+.wk.sel .n, .wk.sel .p { color: #fff; }
+@media (prefers-color-scheme: dark) { .wk.sel .n, .wk.sel .p { color: var(--paper); } }
+.wk.done { border-color: var(--gold); }
+
+/* ---- week header ---- */
+.wkhead { display: flex; align-items: center; justify-content: space-between; margin: 4px 0 10px; }
+.wkhead h2 { font-size: 17px; font-weight: 800; }
+.wkhead .badge {
+  font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 20px;
+  background: var(--road-soft); color: var(--road);
+}
+.wkhead .meta { font-size: 12px; color: var(--ink-mute); font-variant-numeric: tabular-nums; margin-top: 2px; }
+
+/* ---- day cards ---- */
+.day {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--card); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 13px 14px; margin-bottom: 9px;
+  cursor: pointer; user-select: none; transition: transform 0.08s;
+}
+.day:active { transform: scale(0.985); }
+.day.rest { opacity: 0.6; cursor: default; }
+.day .dow {
+  min-width: 30px; text-align: center;
+  font-size: 12px; font-weight: 700; color: var(--ink-mute);
+}
+.day .dow b { display: block; font-size: 14px; color: var(--ink); font-variant-numeric: tabular-nums; }
+.day .body { flex: 1; min-width: 0; }
+.day .title { font-size: 15px; font-weight: 700; letter-spacing: -0.01em; }
+.day .desc { font-size: 12.5px; color: var(--ink-soft); margin-top: 2px; }
+.day .tag {
+  display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 7px;
+  border-radius: 10px; margin-top: 5px;
+}
+.tag.easy { background: var(--road-soft); color: var(--road); }
+.tag.pt { background: var(--bib-soft); color: var(--bib); }
+.tag.long { background: #f5ead2; color: #8a6210; }
+@media (prefers-color-scheme: dark) { .tag.long { background: #33291a; color: var(--gold); } }
+.tag.race { background: var(--bib); color: #fff; }
+
+.chk {
+  width: 30px; height: 30px; border-radius: 50%;
+  border: 2px solid var(--line); flex: 0 0 auto;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+}
+.chk svg { width: 16px; height: 16px; opacity: 0; transform: scale(0.5); transition: all 0.15s; }
+.day.ck .chk { background: var(--bib); border-color: var(--bib); }
+.day.ck .chk svg { opacity: 1; transform: scale(1); stroke: #fff; }
+.day.ck .title { text-decoration: line-through; text-decoration-thickness: 2px; text-decoration-color: var(--bib); color: var(--ink-soft); }
+
+/* ---- race day special ---- */
+.day.raceday { border: 2px solid var(--bib); background: linear-gradient(0deg, var(--bib-soft), var(--card)); }
+
+/* ---- footer nav ---- */
+.foot {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: var(--card); border-top: 1px solid var(--line);
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+}
+.foot .inner { max-width: 480px; margin: 0 auto; display: flex; gap: 10px; }
+.foot button {
+  flex: 1; height: 46px; border-radius: 12px; border: 1.5px solid var(--line);
+  background: var(--card); color: var(--ink); font-size: 15px; font-weight: 700;
+  font-family: inherit; cursor: pointer;
+}
+.foot button:active { transform: scale(0.97); }
+.foot button.primary { background: var(--road); border-color: var(--road); color: #fff; }
+@media (prefers-color-scheme: dark) { .foot button.primary { color: var(--paper); } }
+.foot button:disabled { opacity: 0.35; }
+
+.toast {
+  position: fixed; left: 50%; bottom: 84px; transform: translateX(-50%) translateY(10px);
+  background: var(--ink); color: var(--paper); font-size: 13px; font-weight: 600;
+  padding: 10px 18px; border-radius: 22px; opacity: 0; pointer-events: none;
+  transition: all 0.25s; z-index: 50; white-space: nowrap;
+}
+@media (prefers-color-scheme: dark) { .toast { background: var(--card); color: var(--ink); border: 1px solid var(--line); } }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.loading { text-align: center; padding: 60px 0; color: var(--ink-mute); font-size: 14px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">CHUNCHEON SUB-3:10</div>
+    <h1>박진호의 훈련 트래커</h1>
+    <div class="dday" id="dday"></div>
+  </header>
+
+  <div class="overall">
+    <div class="label">전체 진행률</div>
+    <div class="nums"><span class="pct" id="pct">0%</span><span class="cnt" id="cnt"></span></div>
+    <div class="track"><div class="fill" id="fill" style="width:0%"></div></div>
+    <div class="kmline"><span id="kmdone">0km 완료</span><span id="kmtotal"></span></div>
+  </div>
+
+  <div class="weekbar" id="weekbar"></div>
+
+  <div class="wkhead">
+    <div>
+      <h2 id="wktitle"></h2>
+      <div class="meta" id="wkmeta"></div>
+    </div>
+    <span class="badge" id="wkbadge"></span>
+  </div>
+
+  <div id="days" class="loading">불러오는 중…</div>
+</div>
+
+<div class="foot">
+  <div class="inner">
+    <button id="prev">◀ 이전 주</button>
+    <button id="today" class="primary">이번 주</button>
+    <button id="next">다음 주 ▶</button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const REST = {t:"휴식", d:"완전휴식 또는 스트레칭", c:"rest", km:0};
+const W = [
+  {wk:1,phase:"기초",km:50,start:"2026-07-20",days:[REST,{t:"이지 8km",d:"5:15~5:30/km 편하게",c:"easy",km:8},REST,{t:"인터벌 1km×5",d:"@4:10 · 회복 400m 조깅",c:"pt",km:9},{t:"이지 8km",d:"회복 조깅",c:"easy",km:8},REST,{t:"롱런 18km",d:"5:15~5:30 + 이지 2km",c:"long",km:20}]},
+  {wk:2,phase:"기초",km:52,start:"2026-07-27",days:[REST,{t:"이지 8km",d:"5:20/km",c:"easy",km:8},REST,{t:"템포 6km",d:"@4:35/km + 워밍업/쿨다운",c:"pt",km:10},{t:"이지 8km",d:"회복 조깅",c:"easy",km:8},REST,{t:"롱런 20km",d:"5:15/km",c:"long",km:20}]},
+  {wk:3,phase:"기초",km:55,start:"2026-08-03",days:[REST,{t:"이지 8km",d:"5:20/km",c:"easy",km:8},REST,{t:"인터벌 1km×6",d:"@4:08 · 회복 400m",c:"pt",km:10},{t:"이지 8km",d:"회복 조깅",c:"easy",km:8},REST,{t:"롱런 22km",d:"5:10/km",c:"long",km:22}]},
+  {wk:4,phase:"기초·회복",km:50,start:"2026-08-10",days:[REST,{t:"이지 8km",d:"5:25/km",c:"easy",km:8},REST,{t:"이지 8km",d:"편하게",c:"easy",km:8},{t:"이지 6km",d:"회복",c:"easy",km:6},REST,{t:"롱런 16km",d:"5:20/km · 회복주",c:"long",km:16}]},
+  {wk:5,phase:"강화",km:58,start:"2026-08-17",days:[REST,{t:"이지 9km",d:"5:15/km",c:"easy",km:9},REST,{t:"템포 8km",d:"@4:32/km",c:"pt",km:12},{t:"이지 9km",d:"회복 조깅",c:"easy",km:9},REST,{t:"롱런 24km",d:"5:05/km",c:"long",km:24}]},
+  {wk:6,phase:"강화",km:60,start:"2026-08-24",days:[REST,{t:"이지 9km",d:"5:15/km",c:"easy",km:9},REST,{t:"인터벌 2km×3",d:"@4:20 · 회복 3분",c:"pt",km:11},{t:"이지 9km",d:"회복 조깅",c:"easy",km:9},REST,{t:"롱런 26km",d:"5:00 + 막판 3km @4:35",c:"long",km:26}]},
+  {wk:7,phase:"강화·회복",km:55,start:"2026-08-31",days:[REST,{t:"이지 8km",d:"5:20/km",c:"easy",km:8},REST,{t:"템포 10km",d:"@4:30/km",c:"pt",km:14},{t:"이지 8km",d:"회복 조깅",c:"easy",km:8},REST,{t:"롱런 22km",d:"5:05/km · 회복주",c:"long",km:22}]},
+  {wk:8,phase:"강화",km:62,start:"2026-09-07",days:[REST,{t:"이지 9km",d:"5:15/km",c:"easy",km:9},REST,{t:"인터벌 3km×2",d:"@4:18 · 회복 4분",c:"pt",km:11},{t:"이지 10km",d:"회복 조깅",c:"easy",km:10},REST,{t:"롱런 28km",d:"4:55 + 막판 5km @4:35",c:"long",km:28}]},
+  {wk:9,phase:"강화",km:65,start:"2026-09-14",days:[REST,{t:"이지 10km",d:"5:15/km",c:"easy",km:10},REST,{t:"MP런 12km",d:"@4:30/km — 목표 페이스 각인",c:"pt",km:15},{t:"이지 10km",d:"회복 조깅",c:"easy",km:10},REST,{t:"롱런 30km",d:"4:55/km · 첫 30km 돌파!",c:"long",km:30}]},
+  {wk:10,phase:"정점·회복",km:58,start:"2026-09-21",days:[REST,{t:"이지 9km",d:"5:15/km",c:"easy",km:9},REST,{t:"템포 10km",d:"@4:28/km",c:"pt",km:14},{t:"이지 8km",d:"회복 조깅",c:"easy",km:8},REST,{t:"롱런 24km",d:"5:00 · 회복주 (하프대회 대체 OK)",c:"long",km:27}]},
+  {wk:11,phase:"정점",km:63,start:"2026-09-28",days:[REST,{t:"이지 10km",d:"5:15/km",c:"easy",km:10},REST,{t:"인터벌 2km×4",d:"@4:15 · 회복 3분",c:"pt",km:13},{t:"이지 9km",d:"회복 조깅",c:"easy",km:9},REST,{t:"롱런 30km",d:"4:50 + 막판 8km @4:30 · 리허설",c:"long",km:31}]},
+  {wk:12,phase:"정점·피크",km:66,start:"2026-10-05",days:[REST,{t:"이지 10km",d:"5:15/km",c:"easy",km:10},REST,{t:"MP런 16km",d:"@4:30/km",c:"pt",km:18},{t:"이지 10km",d:"회복 조깅",c:"easy",km:10},REST,{t:"롱런 32km",d:"4:55 + 막판 6km @4:30 · 최대",c:"long",km:28}]},
+  {wk:13,phase:"테이퍼",km:55,start:"2026-10-12",days:[REST,{t:"이지 8km",d:"5:15/km",c:"easy",km:8},REST,{t:"템포 8km",d:"@4:28/km",c:"pt",km:12},{t:"이지 7km",d:"회복 조깅",c:"easy",km:7},REST,{t:"롱런 24km",d:"5:00/km",c:"long",km:28}]},
+  {wk:14,phase:"테이퍼",km:42,start:"2026-10-19",days:[REST,{t:"이지 7km",d:"5:20/km",c:"easy",km:7},REST,{t:"MP런 8km",d:"@4:30/km",c:"pt",km:11},{t:"이지 6km",d:"편하게",c:"easy",km:6},REST,{t:"롱런 16km",d:"5:05/km · 다리 회복",c:"long",km:18}]},
+  {wk:15,phase:"레이스 주",km:28,start:"2026-10-26",days:[REST,{t:"이지 6km",d:"5:20/km",c:"easy",km:6},REST,{t:"이지 5km",d:"+ 스트라이드 4회",c:"easy",km:5},{t:"이지 4km",d:"+ MP 2km 자극",c:"pt",km:6},REST,{t:"춘천마라톤 D-DAY",d:"4:30/km · 하프 1:35 통과 · Sub-3:10!",c:"race",km:42.2}]},
+];
+const DOW = ["월","화","수","목","금","토","일"];
+const RACE = new Date("2026-11-01T08:00:00+09:00");
+const KEY = "chuncheon-sub310-checks";
+
+let checks = {};
+let cur = 0;
+
+function fmt(d){ return (d.getMonth()+1) + "." + d.getDate(); }
+function weekDates(w){
+  const s = new Date(w.start + "T00:00:00+09:00");
+  return DOW.map((_,i)=>{ const d = new Date(s); d.setDate(s.getDate()+i); return d; });
+}
+function todayWeekIdx(){
+  const now = new Date();
+  for (let i=0;i<W.length;i++){
+    const s = new Date(W[i].start + "T00:00:00+09:00");
+    const e = new Date(s); e.setDate(s.getDate()+7);
+    if (now >= s && now < e) return i;
+  }
+  return new Date() < new Date(W[0].start) ? 0 : W.length-1;
+}
+
+function totalStats(){
+  let done=0, total=0, kmDone=0, kmTotal=0;
+  W.forEach((w,wi)=> w.days.forEach((d,di)=>{
+    if (d.c==="rest") return;
+    total++; kmTotal += d.km;
+    if (checks[wi+"-"+di]) { done++; kmDone += d.km; }
+  }));
+  return {done,total,kmDone,kmTotal};
+}
+
+function renderOverall(){
+  const s = totalStats();
+  const pct = s.total ? Math.round(s.done/s.total*100) : 0;
+  document.getElementById("pct").textContent = pct + "%";
+  document.getElementById("cnt").textContent = s.done + " / " + s.total + " 세션";
+  document.getElementById("fill").style.width = pct + "%";
+  document.getElementById("kmdone").textContent = Math.round(s.kmDone) + "km 완료";
+  document.getElementById("kmtotal").textContent = "총 " + Math.round(s.kmTotal) + "km";
+  const dd = Math.ceil((RACE - new Date()) / 86400000);
+  document.getElementById("dday").textContent = dd > 0 ? "춘천마라톤 D-" + dd + " · 2026.11.1(일) 가정" : "레이스 데이!";
+}
+
+function renderWeekbar(){
+  const bar = document.getElementById("weekbar");
+  bar.innerHTML = "";
+  W.forEach((w,wi)=>{
+    const runDays = w.days.map((d,di)=>({d,di})).filter(x=>x.d.c!=="rest");
+    const doneCount = runDays.filter(x=>checks[wi+"-"+x.di]).length;
+    const el = document.createElement("div");
+    el.className = "wk" + (wi===cur?" sel":"") + (doneCount===runDays.length && runDays.length>0 ? " done":"");
+    el.innerHTML = '<div class="n">'+w.wk+'주</div><div class="p">'+w.phase+'</div>'
+      + '<div class="dots">'+runDays.map(x=>'<i class="'+(checks[wi+"-"+x.di]?"on":"")+'"></i>').join("")+'</div>';
+    el.onclick = ()=>{ cur=wi; render(); };
+    bar.appendChild(el);
+  });
+  const sel = bar.children[cur];
+  if (sel) sel.scrollIntoView({behavior:"smooth", inline:"center", block:"nearest"});
+}
+
+function renderWeek(){
+  const w = W[cur];
+  const dates = weekDates(w);
+  document.getElementById("wktitle").textContent = w.wk + "주차";
+  document.getElementById("wkmeta").textContent = fmt(dates[0]) + " ~ " + fmt(dates[6]) + " · 주간 " + w.km + "km";
+  document.getElementById("wkbadge").textContent = w.phase;
+
+  const wrap = document.getElementById("days");
+  wrap.className = "";
+  wrap.innerHTML = "";
+  const todayStr = new Date().toDateString();
+
+  w.days.forEach((d,di)=>{
+    const el = document.createElement("div");
+    const key = cur+"-"+di;
+    const isRest = d.c==="rest";
+    el.className = "day " + d.c + (checks[key]?" ck":"") + (isRest?" rest":"") + (d.c==="race"?" raceday":"");
+    const isToday = dates[di].toDateString() === todayStr;
+    el.innerHTML =
+      '<div class="dow">'+DOW[di]+'<b>'+dates[di].getDate()+'</b></div>'
+      + '<div class="body"><div class="title">'+d.t+(isToday?' <span style="color:var(--bib);font-size:11px;">● 오늘</span>':'')+'</div>'
+      + '<div class="desc">'+d.d+'</div>'
+      + (isRest?'':'<span class="tag '+d.c+'">'+(d.c==="easy"?"이지":d.c==="pt"?"포인트":d.c==="long"?"롱런":"RACE")+' · '+d.km+'km</span>')
+      + '</div>'
+      + (isRest?'':'<div class="chk"><svg viewBox="0 0 24 24" fill="none" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></div>');
+    if (!isRest) el.onclick = ()=> toggle(key, d.t);
+    wrap.appendChild(el);
+  });
+
+  document.getElementById("prev").disabled = cur===0;
+  document.getElementById("next").disabled = cur===W.length-1;
+}
+
+let saveTimer = null;
+async function persist(){
+  try { await window.storage.set(KEY, JSON.stringify(checks)); }
+  catch(e){ showToast("저장 실패 — 네트워크 확인"); }
+}
+function toggle(key, title){
+  checks[key] = !checks[key];
+  if (!checks[key]) delete checks[key];
+  render();
+  showToast(checks[key] ? "✓ " + title + " 완료!" : title + " 체크 해제");
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(persist, 400);
+}
+
+let toastTimer = null;
+function showToast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=> t.classList.remove("show"), 1600);
+}
+
+function render(){ renderOverall(); renderWeekbar(); renderWeek(); }
+
+document.getElementById("prev").onclick = ()=>{ if(cur>0){cur--;render();} };
+document.getElementById("next").onclick = ()=>{ if(cur<W.length-1){cur++;render();} };
+document.getElementById("today").onclick = ()=>{ cur = todayWeekIdx(); render(); };
+
+(async function init(){
+  try {
+    const r = await window.storage.get(KEY);
+    if (r && r.value) checks = JSON.parse(r.value);
+  } catch(e) { /* first run — no saved data */ }
+  cur = todayWeekIdx();
+  render();
+})();
+</script>
+</body>
+</html>
